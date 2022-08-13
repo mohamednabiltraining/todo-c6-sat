@@ -1,6 +1,8 @@
 import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_c6_sat/home/tasks_list/task_widget.dart';
+import 'package:todo_c6_sat/my_database.dart';
+import 'package:todo_c6_sat/task.dart';
 class TasksListTab extends StatefulWidget {
 
   @override
@@ -30,11 +32,25 @@ class _TasksListTabState extends State<TasksListTab> {
             selectableDayPredicate: (date) => date.day != 23,
             locale: 'en',
           ),
-          Expanded(child: ListView.separated(itemBuilder: (buildContext,indext){
-            return TaskWidget();
-          },itemCount: 20,
-          separatorBuilder: (_,__)=>SizedBox(height: 8,),
-          ))
+          Expanded(child:
+              FutureBuilder<List<Task>>(
+                future: MyDataBase.getTasks(),
+                builder:(buildContext,snapshot){
+                  if(snapshot.hasError){
+                    return Text(snapshot.error.toString());
+                    // show Try again
+                  }else if(snapshot.connectionState ==ConnectionState.waiting){
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  var data= snapshot.data;
+                 return  ListView.separated(itemBuilder: (buildContext,index){
+                    return TaskWidget(data!.elementAt(index));
+                  },itemCount:(data?.length) ??0 ,
+                    separatorBuilder: (_,__)=>SizedBox(height: 8,),
+                  );
+                } ,
+              )
+          )
         ],
       ),
     );
