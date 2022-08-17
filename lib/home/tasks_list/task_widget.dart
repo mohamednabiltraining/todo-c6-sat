@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:provider/provider.dart';
+import 'package:todo_c6_sat/dialoge_utils.dart';
+import 'package:todo_c6_sat/my_database.dart';
+import 'package:todo_c6_sat/provider/tasks_provider.dart';
 import 'package:todo_c6_sat/task.dart';
 
-class TaskWidget extends StatelessWidget {
+class TaskWidget extends StatefulWidget {
   Task task;
   TaskWidget(this.task);
+
+  @override
+  State<TaskWidget> createState() => _TaskWidgetState();
+}
+
+class _TaskWidgetState extends State<TaskWidget> {
   @override
   Widget build(BuildContext context) {
     return Slidable(
@@ -13,7 +23,7 @@ class TaskWidget extends StatelessWidget {
         children: [
           SlidableAction(
             onPressed: (buildContext){
-
+              deleteTask(widget.task);
             },
             backgroundColor: Color(0xFFFE4A49),
             foregroundColor: Colors.white,
@@ -50,13 +60,13 @@ class TaskWidget extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${task.title}',style: Theme.of(context).textTheme.titleMedium,
+                  Text('${widget.task.title}',style: Theme.of(context).textTheme.titleMedium,
                   textAlign: TextAlign.start,
                   ),
                   SizedBox(height:8,),
                   Row(
                     children: [
-                      Text(task.content??"",style: Theme.of(context).textTheme.bodySmall,)
+                      Text(widget.task.content??"",style: Theme.of(context).textTheme.bodySmall,)
                     ],
                   )
                 ],
@@ -74,5 +84,27 @@ class TaskWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void deleteTask(Task task){
+    showLoading(context, 'Loading...');
+    var provider = Provider.of<TasksProvider>(context,listen: false);
+    MyDataBase.deleteTask(widget.task)
+        .then((value){
+          provider.retrieveTasks();
+          hideLoading(context);
+          // call when task is completed
+      showMessage(context, 'Task deleted Successfully',
+      posActionName:'ok');
+    }).onError((error, stackTrace) {
+      hideLoading(context);
+      showMessage(context, 'please try again later',
+          posActionName:'ok');
+    }).timeout(Duration(seconds: 5,),onTimeout: (){
+      hideLoading(context);
+      provider.retrieveTasks();
+      showMessage(context, 'data saved locally',
+          posActionName:'ok');
+    });
   }
 }
